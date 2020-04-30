@@ -72,14 +72,21 @@ def button_pushed(channel):
 		# Run xbmc-sendkey
 		subprocess.call(["xbmc-send", "-a", action])
 
+def poweroff(channel):
+    sys.stderr.write("Powering off from button")
+    subprocess.call(["poweroff"])
+
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup([10, 9, 11, 0], GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+GPIO.setup(23, GPIO.IN, pull_up_down = GPIO.PUD_UP)
 
 GPIO.add_event_detect(10, GPIO.RISING, callback=button_pushed, bouncetime=200)
 GPIO.add_event_detect(9, GPIO.RISING, callback=button_pushed, bouncetime=200)
 GPIO.add_event_detect(11, GPIO.RISING, callback=button_pushed, bouncetime=200)
 GPIO.add_event_detect(0, GPIO.RISING, callback=button_pushed, bouncetime=200)
+
+GPIO.add_event_detect(23, GPIO.FALLING, callback=poweroff, bouncetime=200)
 
 try:
 	while True:

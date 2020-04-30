@@ -52,10 +52,5 @@ sudo ln -s /home/osmc/lcdd-oled/lcdd-oled.service /etc/systemd/system/multi-user
 kodi-send --action="InstallAddon(script.xbmc.lcdproc)"
 cp kodi-files/userdata/LCD.xml ~/.kodi/userdata
 
-# install code poweroff button
-ln -s /home/osmc/switch/switch.service /etc/systemd/system/multi-user.target.wants/switch.service
-sudo systemctl daemon-reload
-sudo systemctl start switch
-
 
 # TODO Install Replay Add-ons

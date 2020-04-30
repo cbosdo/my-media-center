@@ -1,8 +1,0 @@
-[Unit]
-Description=GPIO poweroff button service
-
-[Service]
-ExecStart=/home/osmc/switch/switch.sh
-
-[Install]
-WantedBy=multi-user.target
