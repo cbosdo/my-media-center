@@ -1,0 +1,18 @@
+#!/bin/sh
+set -x
+
+args=
+url=$1
+
+case "$url" in
+  cdda://*)
+    track=$(echo "$url" | sed 's;cdda://local/0*\([0-9]\+\).cdda;\1;')
+    args="--cdda-track $track"
+    url="cdda://"
+    ;;
+  *)
+    exit 1
+    ;;
+esac
+
+/usr/bin/cvlc --extraintf=rc --rc-host localhost:4321 --play-and-exit $args $url

@@ -1,0 +1,1 @@
+SUBSYSTEM=="block", KERNEL=="sr0", SYMLINK+="cdrom cdrw dvd dvdrw" RUN+="/home/osmc/bin/xbmc-autodvd"

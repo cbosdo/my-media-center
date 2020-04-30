@@ -1,0 +1,8 @@
+[Unit]
+Description=GPIO input listening daemon
+
+[Service]
+ExecStart=/home/osmc/buttonsd/buttonsd
+
+[Install]
+WantedBy=multi-user.target

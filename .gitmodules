@@ -1,0 +1,3 @@
+[submodule "lcdd-oled"]
+	path = lcdd-oled
+	url = https://github.com/cbosdo/lcdd-oled

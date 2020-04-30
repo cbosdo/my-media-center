@@ -1,0 +1,14 @@
+<playercorefactory>
+ <players>
+  <player name="VLC" type="ExternalPlayer" audio="true" video="false">
+   <filename>/home/osmc/bin/vlc-wrapper</filename>
+   <args>"{0}"</args>
+   <hidexbmc>false</hidexbmc>
+   <hideconsole>true</hideconsole>
+   <playonestackitem>true</playonestackitem>
+  </player>
+ </players>
+ <rules action="prepend">
+  <rule name="cdda" video="false" audio="true" filename=".*\.cdda" player="VLC"/>
+ </rules>
+</playercorefactory>

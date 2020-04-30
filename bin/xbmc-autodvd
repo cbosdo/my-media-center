@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# File keep track of the DVD status
+DVDLOCK=/home/osmc/.kodi/dvdlock
+
+
+if test "$DISK_EJECT_REQUEST" == "1"; then
+  echo "eject" >>/home/osmc/autodvd.log
+  pkill -9 vlc
+  rm $DVDLOCK
+  exit
+fi
+
+# Discard all DVD events until eject request
+# This avoids getting multiple times the same event
+if test -e $DVDLOCK; then
+  echo "skip event" >>/home/osmc/autodvd.log
+  exit
+fi
+
+# If ID_CDROM_MEDIA_SESSION_COUNT isn't set, then we surely
+# have no DVD/cdrom in the tray
+if test $ID_CDROM_MEDIA_SESSION_COUNT -gt 0; then
+  echo "play" >>/home/osmc/autodvd.log
+  touch $DVDLOCK
+  xbmc-send -a playdvd
+fi
