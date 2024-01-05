@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import datetime
 import os
 import os.path
 import RPi.GPIO as GPIO
@@ -13,64 +14,71 @@ import json
 events = []
 
 def getActivePlayers():
-	conn = socket.create_connection(('localhost', 9090))
-	conn.send('{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}')
-	response = json.loads(conn.recv(2048))
-	return response['result']
+    conn = socket.create_connection(('localhost', 9090))
+    conn.send('{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}'.encode('utf-8'))
+    response = json.loads(conn.recv(2048))
+    return response['result']
 
 def getPlaylists():
-	conn = socket.create_connection(('localhost', 9090))
-	conn.send('{"jsonrpc": "2.0", "method": "Playlist.GetPlaylists", "id": 1}')
-	response = json.loads(conn.recv(2048))
-	return response['result']
+    conn = socket.create_connection(('localhost', 9090))
+    conn.send('{"jsonrpc": "2.0", "method": "Playlist.GetPlaylists", "id": 1}'.encode('utf-8'))
+    response = json.loads(conn.recv(2048))
+    return response['result']
 
 def clearPlaylist(id):
-	print "Clearing playlist %d" % id
-	conn = socket.create_connection(('localhost', 9090))
-	cmd = '{"jsonrpc": "2.0", "method": "Playlist.Clear", "params": {"playlistid": %d}, "id": 1}' % id
-	conn.send(cmd)
+    print("Clearing playlist %d" % id)
+    conn = socket.create_connection(('localhost', 9090))
+    cmd = '{"jsonrpc": "2.0", "method": "Playlist.Clear", "params": {"playlistid": %d}, "id": 1}' % id
+    conn.send(cmd.encode('utf-8'))
 
 def is_vlc_running():
-	return subprocess.call(["pgrep", "vlc"]) == 0
+    return subprocess.call(["pgrep", "vlc"]) == 0
 
 def vlc_command(cmds):
-	p = subprocess.Popen(["netcat", "localhost", "4321"], stdin=subprocess.PIPE)
-	cmd_str = '\n'.join(cmds)
-	if (not cmd_str.endswith('\n')):
-		cmd_str = cmd_str + '\n'
-	p.communicate(cmd_str)
+    p = subprocess.Popen(["netcat", "localhost", "4321"], stdin=subprocess.PIPE)
+    cmd_str = '\n'.join(cmds)
+    if (not cmd_str.endswith('\n')):
+        cmd_str = cmd_str + '\n'
+    p.communicate(cmd_str)
+
+
+last_timestamp = datetime.datetime.now()
 
 def button_pushed(channel):
-	if is_vlc_running():
-		if channel == 10:
-			vlc_command(["pause", "quit"])
-		else:
-			if channel == 9:
-				playlists = getPlaylists()
-				for playlist in playlists:
-					if playlist["type"] == "audio":
-						clearPlaylist(playlist["playlistid"])
-				subprocess.call(["xbmc-send", "-a", "Stop"])
-			if channel == 0:
-				subprocess.call(["xbmc-send", "-a", "SkipPrevious"])
-		
-			# kodi won't do anything before vlc ends
-			vlc_command(["shutdown"])
-			
-	else:
-		# See http://kodi.wiki/view/Action_IDs
-		# SkipNext isn't used: stop will do the same
-		actions = {10: "PlayPause",
-			    9: "Stop",
-			   11: "SkipNext",
-			    0: "SkipPrevious"}
+    if is_vlc_running():
+        if channel == 10:
+            vlc_command(["pause", "quit"])
+        else:
+            if channel == 9:
+                playlists = getPlaylists()
+                for playlist in playlists:
+                    if playlist["type"] == "audio":
+                        clearPlaylist(playlist["playlistid"])
+                subprocess.call(["xbmc-send", "-a", "Stop"])
+            if channel == 0:
+                subprocess.call(["xbmc-send", "-a", "SkipPrevious"])
 
-		action = actions[channel]
-		if channel == 10 and not getActivePlayers():
-			action = "PlayDVD"
+            # kodi won't do anything before vlc ends
+            vlc_command(["shutdown"])
 
-		# Run xbmc-sendkey
-		subprocess.call(["xbmc-send", "-a", action])
+    else:
+        global last_timestamp
+        now = datetime.datetime.now()
+        if (now - last_timestamp).total_seconds() > 1.0:
+            last_timestamp = now
+            # See http://kodi.wiki/view/Action_IDs
+            # SkipNext isn't used: stop will do the same
+            actions = {10: "PlayPause",
+                    9: "Stop",
+                   11: "SkipNext",
+                    0: "SkipPrevious"}
+
+            action = actions[channel]
+            if channel == 10 and not getActivePlayers():
+                action = "PlayDVD"
+
+            # Run xbmc-sendkey
+            subprocess.call(["xbmc-send", "-a", action])
 
 def poweroff(channel):
     sys.stderr.write("Powering off from button")
@@ -81,17 +89,17 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup([10, 9, 11, 0], GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
 GPIO.setup(23, GPIO.IN, pull_up_down = GPIO.PUD_UP)
 
-GPIO.add_event_detect(10, GPIO.RISING, callback=button_pushed, bouncetime=200)
-GPIO.add_event_detect(9, GPIO.RISING, callback=button_pushed, bouncetime=200)
-GPIO.add_event_detect(11, GPIO.RISING, callback=button_pushed, bouncetime=200)
-GPIO.add_event_detect(0, GPIO.RISING, callback=button_pushed, bouncetime=200)
+GPIO.add_event_detect(10, GPIO.FALLING, callback=button_pushed, bouncetime=400)
+GPIO.add_event_detect(9, GPIO.FALLING, callback=button_pushed, bouncetime=400)
+GPIO.add_event_detect(11, GPIO.FALLING, callback=button_pushed, bouncetime=400)
+GPIO.add_event_detect(0, GPIO.FALLING, callback=button_pushed, bouncetime=400)
 
-GPIO.add_event_detect(23, GPIO.FALLING, callback=poweroff, bouncetime=200)
+GPIO.add_event_detect(23, GPIO.FALLING, callback=poweroff, bouncetime=400)
 
 try:
-	while True:
-		time.sleep(1)
+    while True:
+        time.sleep(1)
 except KeyboardInterrupt:
-	GPIO.cleanup()
-	sys.exit(0)
+    GPIO.cleanup()
+    sys.exit(0)
 
